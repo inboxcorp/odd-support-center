@@ -1,0 +1,130 @@
+/* Support Center Calendar Styling */
+
+/* Calendar Event Status Colors */
+.fc-event.status-draft {
+    background-color: #6c757d !important;
+    border-color: #6c757d !important;
+}
+
+.fc-event.status-confirmed {
+    background-color: #007bff !important;
+    border-color: #007bff !important;
+}
+
+.fc-event.status-in_progress {
+    background-color: #ffc107 !important;
+    border-color: #ffc107 !important;
+    color: #212529 !important;
+}
+
+.fc-event.status-completed {
+    background-color: #28a745 !important;
+    border-color: #28a745 !important;
+}
+
+.fc-event.status-cancelled {
+    background-color: #dc3545 !important;
+    border-color: #dc3545 !important;
+    opacity: 0.7;
+    text-decoration: line-through;
+}
+
+/* Priority Indicators */
+.fc-event .priority-high::before {
+    content: "⭐ ";
+    color: #ffc107;
+}
+
+.fc-event .priority-urgent::before {
+    content: "⚠️ ";
+    color: #dc3545;
+}
+
+/* Calendar Event Details */
+.o_calendar_event_details {
+    padding: 2px 4px;
+    font-size: 11px;
+    line-height: 1.2;
+}
+
+.o_calendar_event_details strong {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 1px;
+}
+
+/* Badge Styling */
+.badge-draft {
+    background-color: #6c757d;
+}
+
+.badge-confirmed {
+    background-color: #007bff;
+}
+
+.badge-in_progress {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+.badge-completed {
+    background-color: #28a745;
+}
+
+.badge-cancelled {
+    background-color: #dc3545;
+}
+
+/* Calendar View Enhancements */
+.o_calendar_view .fc-toolbar {
+    margin-bottom: 15px;
+}
+
+.o_calendar_view .fc-toolbar h2 {
+    font-size: 1.5rem;
+    color: #495057;
+}
+
+/* Event Hover Effects */
+.fc-event:hover {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transform: translateY(-1px);
+    transition: all 0.2s ease;
+}
+
+/* Responsive Calendar */
+@media (max-width: 768px) {
+    .o_calendar_event_details {
+        font-size: 10px;
+    }
+    
+    .fc-event .priority-high::before,
+    .fc-event .priority-urgent::before {
+        display: none;
+    }
+}
+
+/* Calendar Legend */
+.support_calendar_legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    margin-bottom: 15px;
+}
+
+.support_calendar_legend_item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+}
+
+.support_calendar_legend_color {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    border: 1px solid rgba(0,0,0,0.1);
+}

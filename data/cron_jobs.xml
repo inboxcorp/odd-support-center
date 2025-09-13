@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Cron Job for 24-Hour Appointment Reminders -->
+    <record id="cron_appointment_reminders" model="ir.cron">
+        <field name="name">Send Appointment Reminders</field>
+        <field name="model_id" ref="model_support_appointment"/>
+        <field name="state">code</field>
+        <field name="code">model.check_upcoming_reminders()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">hours</field>
+        <field name="numbercall">-1</field>
+        <field name="active" eval="True"/>
+        <field name="user_id" ref="base.user_root"/>
+        <field name="doall" eval="False"/>
+    </record>
+
+    <!-- Optional: Daily cleanup cron job for old cancelled appointments -->
+    <record id="cron_appointment_cleanup" model="ir.cron">
+        <field name="name">Cleanup Old Appointments</field>
+        <field name="model_id" ref="model_support_appointment"/>
+        <field name="state">code</field>
+        <field name="code">model.cleanup_old_appointments()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="numbercall">-1</field>
+        <field name="active" eval="False"/>
+        <field name="user_id" ref="base.user_root"/>
+        <field name="doall" eval="False"/>
+    </record>
+
+    <!-- Optional: Weekly appointment statistics cron job -->
+    <record id="cron_appointment_stats" model="ir.cron">
+        <field name="name">Generate Appointment Statistics</field>
+        <field name="model_id" ref="model_support_appointment"/>
+        <field name="state">code</field>
+        <field name="code">model.generate_weekly_stats()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">weeks</field>
+        <field name="numbercall">-1</field>
+        <field name="active" eval="False"/>
+        <field name="user_id" ref="base.user_root"/>
+        <field name="doall" eval="False"/>
+    </record>
+</odoo>

@@ -1,0 +1,308 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Calendar View -->
+    <record id="view_appointment_calendar" model="ir.ui.view">
+        <field name="name">support.appointment.calendar</field>
+        <field name="model">support.appointment</field>
+        <field name="arch" type="xml">
+            <calendar 
+                string="Appointments Calendar" 
+                date_start="scheduled_date" 
+                date_stop="end_datetime"
+                color="technician_id"
+                mode="month"
+                quick_add="False"
+                event_open_popup="True"
+                event_limit="5">
+                <field name="name"/>
+                <field name="customer_id"/>
+                <field name="technician_id"/>
+                <field name="status"/>
+                <field name="priority"/>
+                <field name="location"/>
+                <templates>
+                    <div t-name="calendar-box">
+                        <div class="o_calendar_event_details">
+                            <strong><field name="name"/></strong><br/>
+                            <field name="customer_id"/><br/>
+                            <span class="badge" t-att-class="'badge-' + record.status.raw_value">
+                                <field name="status"/>
+                            </span>
+                            <t t-if="record.priority.raw_value != 'normal'">
+                                <span class="fa fa-star text-warning" t-if="record.priority.raw_value == 'high'"/>
+                                <span class="fa fa-exclamation-triangle text-danger" t-if="record.priority.raw_value == 'urgent'"/>
+                            </t>
+                        </div>
+                    </div>
+                </templates>
+            </calendar>
+        </field>
+    </record>
+
+    <!-- List View -->
+    <record id="view_appointment_list" model="ir.ui.view">
+        <field name="name">support.appointment.list</field>
+        <field name="model">support.appointment</field>
+        <field name="arch" type="xml">
+            <tree string="Appointments" 
+                  decoration-success="status == 'completed'"
+                  decoration-info="status == 'confirmed'" 
+                  decoration-warning="status == 'in_progress'"
+                  decoration-muted="status == 'cancelled'"
+                  create="true"
+                  edit="true">
+                <field name="name"/>
+                <field name="customer_id"/>
+                <field name="technician_id"/>
+                <field name="scheduled_date"/>
+                <field name="duration" widget="float_time"/>
+                <field name="status" widget="badge" 
+                       decoration-success="status == 'completed'"
+                       decoration-info="status == 'confirmed'"
+                       decoration-warning="status == 'in_progress'"
+                       decoration-danger="status == 'cancelled'"/>
+                <field name="priority" widget="priority"/>
+                <field name="location"/>
+                <field name="helpdesk_ticket_id"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Form View -->
+    <record id="view_appointment_form" model="ir.ui.view">
+        <field name="name">support.appointment.form</field>
+        <field name="model">support.appointment</field>
+        <field name="arch" type="xml">
+            <form string="Appointment">
+                <header>
+                    <button name="action_confirm" string="Confirm" type="object" 
+                            class="btn-primary" states="draft"
+                            groups="support_center.group_support_manager"/>
+                    <button name="action_start" string="Start" type="object" 
+                            class="btn-primary" states="confirmed"/>
+                    <button name="action_complete" string="Complete" type="object" 
+                            class="btn-success" states="in_progress"/>
+                    <button name="action_reschedule" string="Reschedule" type="object" 
+                            class="btn-info" states="draft,confirmed"
+                            groups="support_center.group_support_manager"/>
+                    <button name="action_cancel" string="Cancel" type="object" 
+                            class="btn-secondary" states="draft,confirmed,in_progress"/>
+                    <field name="status" widget="statusbar" statusbar_visible="draft,confirmed,in_progress,completed"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="%(helpdesk.helpdesk_ticket_action_main_tree)d" type="action"
+                                class="oe_stat_button" icon="fa-ticket"
+                                context="{'search_default_id': helpdesk_ticket_id}">
+                            <div class="o_stat_info">
+                                <span class="o_stat_text">View</span>
+                                <span class="o_stat_text">Ticket</span>
+                            </div>
+                        </button>
+                    </div>
+                    
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" readonly="1"/>
+                        </h1>
+                    </div>
+                    
+                    <group>
+                        <group name="appointment_details">
+                            <field name="customer_id" options="{'no_create': True}"/>
+                            <field name="technician_id" 
+                                   domain="[('groups_id', 'in', %(support_center.group_support_technician)d)]"
+                                   options="{'no_create': True}"/>
+                            <field name="scheduled_date"/>
+                            <field name="duration" widget="float_time"/>
+                            <field name="end_datetime" readonly="1"/>
+                            <field name="priority"/>
+                        </group>
+                        <group name="service_details">
+                            <field name="location"/>
+                            <field name="helpdesk_ticket_id" options="{'no_create': True}"/>
+                            <field name="created_via" readonly="1"/>
+                        </group>
+                    </group>
+                    
+                    <group name="notification_settings" string="Email Notifications" 
+                           groups="support_center.group_support_manager">
+                        <group>
+                            <field name="send_confirmation_email"/>
+                            <field name="send_reminder_email"/>
+                        </group>
+                        <group>
+                            <field name="confirmation_sent" readonly="1"/>
+                            <field name="reminder_sent" readonly="1"/>
+                        </group>
+                    </group>
+                    
+                    <field name="description" placeholder="Appointment notes and service details..."/>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <!-- Search View -->
+    <record id="view_appointment_search" model="ir.ui.view">
+        <field name="name">support.appointment.search</field>
+        <field name="model">support.appointment</field>
+        <field name="arch" type="xml">
+            <search string="Search Appointments">
+                <field name="name" string="Reference"/>
+                <field name="customer_id" string="Customer"/>
+                <field name="technician_id" string="Technician"/>
+                <field name="location" string="Location"/>
+                <field name="helpdesk_ticket_id" string="Ticket"/>
+                
+                <filter name="my_appointments" string="My Appointments" 
+                        domain="[('technician_id', '=', uid)]"/>
+                <filter name="today" string="Today" 
+                        domain="[('scheduled_date', '&gt;=', datetime.datetime.combine(context_today(), datetime.time(0,0,0))), 
+                                ('scheduled_date', '&lt;', datetime.datetime.combine(context_today() + relativedelta(days=1), datetime.time(0,0,0)))]"/>
+                <filter name="this_week" string="This Week" 
+                        domain="[('scheduled_date', '&gt;=', (context_today() - relativedelta(days=context_today().weekday())).strftime('%Y-%m-%d')),
+                                ('scheduled_date', '&lt;', (context_today() + relativedelta(days=7-context_today().weekday())).strftime('%Y-%m-%d'))]"/>
+                
+                <separator/>
+                <filter name="draft" string="Draft" domain="[('status', '=', 'draft')]"/>
+                <filter name="confirmed" string="Confirmed" domain="[('status', '=', 'confirmed')]"/>
+                <filter name="in_progress" string="In Progress" domain="[('status', '=', 'in_progress')]"/>
+                <filter name="completed" string="Completed" domain="[('status', '=', 'completed')]"/>
+                <filter name="cancelled" string="Cancelled" domain="[('status', '=', 'cancelled')]"/>
+                
+                <separator/>
+                <filter name="high_priority" string="High Priority" domain="[('priority', 'in', ['high', 'urgent'])]"/>
+                
+                <group expand="0" string="Group By">
+                    <filter name="group_technician" string="Technician" context="{'group_by': 'technician_id'}"/>
+                    <filter name="group_status" string="Status" context="{'group_by': 'status'}"/>
+                    <filter name="group_date" string="Date" context="{'group_by': 'scheduled_date:day'}"/>
+                    <filter name="group_customer" string="Customer" context="{'group_by': 'customer_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Actions -->
+    <record id="action_appointment_calendar" model="ir.actions.act_window">
+        <field name="name">Appointment Calendar</field>
+        <field name="res_model">support.appointment</field>
+        <field name="view_mode">calendar,list,form</field>
+        <field name="view_id" ref="view_appointment_calendar"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Schedule your first appointment!
+            </p>
+            <p>
+                Create appointments for customer support visits. The calendar shows appointments 
+                color-coded by technician with status indicators.
+            </p>
+            <p>
+                <a type="action" name="%(action_appointment_quick_create)d" class="btn btn-primary">
+                    Create Appointment
+                </a>
+            </p>
+        </field>
+        <field name="context">{
+            'search_default_my_appointments': 1,
+        }</field>
+    </record>
+
+    <record id="action_appointment_list" model="ir.actions.act_window">
+        <field name="name">Appointments</field>
+        <field name="res_model">support.appointment</field>
+        <field name="view_mode">list,form,calendar</field>
+        <field name="view_id" ref="view_appointment_list"/>
+        <field name="context">{}</field>
+    </record>
+
+    <!-- Settings Views -->
+    <record id="view_appointment_settings_form" model="ir.ui.view">
+        <field name="name">support.appointment.settings.form</field>
+        <field name="model">support.appointment.settings</field>
+        <field name="arch" type="xml">
+            <form string="Appointment Settings">
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="Configuration name..."/>
+                        </h1>
+                    </div>
+                    
+                    <group>
+                        <field name="technician_id" 
+                               domain="[('groups_id', 'in', %(support_center.group_support_technician)d)]"
+                               options="{'no_create': True}"
+                               help="Leave empty for global settings"/>
+                    </group>
+                    
+                    <group string="Working Hours">
+                        <group>
+                            <field name="working_hours_start" widget="float_time"/>
+                            <field name="working_hours_end" widget="float_time"/>
+                        </group>
+                        <group>
+                            <field name="working_days" placeholder="1,2,3,4,5"/>
+                        </group>
+                    </group>
+                    
+                    <group string="Appointment Constraints">
+                        <group>
+                            <field name="max_daily_appointments"/>
+                            <field name="default_duration" widget="float_time"/>
+                        </group>
+                        <group>
+                            <field name="advance_booking_days"/>
+                            <field name="buffer_time" widget="float_time"/>
+                        </group>
+                    </group>
+                    
+                    <group string="Email Settings">
+                        <group>
+                            <field name="auto_confirm_emails"/>
+                            <field name="auto_reminder_emails"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_appointment_settings_list" model="ir.ui.view">
+        <field name="name">support.appointment.settings.list</field>
+        <field name="model">support.appointment.settings</field>
+        <field name="arch" type="xml">
+            <tree string="Appointment Settings">
+                <field name="name"/>
+                <field name="technician_id"/>
+                <field name="working_hours_start" widget="float_time"/>
+                <field name="working_hours_end" widget="float_time"/>
+                <field name="max_daily_appointments"/>
+                <field name="auto_confirm_emails"/>
+                <field name="auto_reminder_emails"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="action_appointment_settings" model="ir.actions.act_window">
+        <field name="name">Appointment Settings</field>
+        <field name="res_model">support.appointment.settings</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Configure appointment settings!
+            </p>
+            <p>
+                Set up working hours, appointment constraints, and email preferences 
+                for technicians or globally.
+            </p>
+        </field>
+    </record>
+
+</odoo>

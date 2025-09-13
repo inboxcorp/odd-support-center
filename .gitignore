@@ -1,0 +1,79 @@
+# Odoo specific
+*.pyc
+__pycache__/
+*.so
+.venv/
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Temporary files
+*.tmp
+*.temp
+tmp/
+temp/
+
+# Backup files
+*.bak
+*.backup
+*.orig
+
+# Python
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# Local configuration
+local_settings.py
+.env.local
+config.local.py
+
+# Claude Code specific (exclude AI configuration)
+.claude/
+.bmad-core/
+
+# Module specific
+# Uncomment if you want to exclude certain data files
+# data/demo_data.xml
+
+# Test files
+test_results/
+coverage/
+
+# Node modules (if using JavaScript build tools)
+node_modules/
+npm-debug.log
+yarn-error.log

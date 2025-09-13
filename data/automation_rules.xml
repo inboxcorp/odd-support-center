@@ -1,0 +1,263 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Server Action: Create Appointment from External Data -->
+    <record id="server_action_create_appointment_external" model="ir.actions.server">
+        <field name="name">Create Appointment from External System</field>
+        <field name="model_id" ref="model_support_appointment"/>
+        <field name="state">code</field>
+        <field name="code">
+# Example server action for processing external appointment requests
+# This can be triggered by email, webhook, or other automation rules
+
+# Sample processing logic for external data
+external_data = env.context.get('external_data', {})
+
+if external_data:
+    # Extract appointment details from external data
+    customer_email = external_data.get('customer_email')
+    customer_name = external_data.get('customer_name')
+    requested_date = external_data.get('requested_date')
+    description = external_data.get('description', '')
+    priority = external_data.get('priority', 'normal')
+    location = external_data.get('location', '')
+    
+    # Find or create customer
+    partner = env['res.partner'].search([('email', '=', customer_email)], limit=1)
+    if not partner and customer_name:
+        partner = env['res.partner'].create({
+            'name': customer_name,
+            'email': customer_email,
+            'is_company': False,
+        })
+    
+    # Find available technician (simple round-robin or by availability)
+    technician = env['res.users'].search([
+        ('groups_id', 'in', env.ref('support_center.group_support_technician').id),
+        ('active', '=', True)
+    ], limit=1)
+    
+    if partner and technician and requested_date:
+        # Create appointment with external flag
+        appointment = env['support.appointment'].create({
+            'customer_id': partner.id,
+            'technician_id': technician.id,
+            'scheduled_date': requested_date,
+            'description': description,
+            'priority': priority,
+            'location': location,
+            'created_via': 'automation',
+            'send_confirmation_email': True,
+            'send_reminder_email': True,
+        })
+        
+        # Log successful creation
+        log_message = f"External appointment created: {appointment.name} for {partner.name}"
+        env['ir.logging'].sudo().create({
+            'name': 'support_center.automation',
+            'type': 'server',
+            'level': 'INFO',
+            'message': log_message,
+            'path': 'support_center',
+            'func': 'external_appointment_creation',
+            'line': '1',
+        })
+</field>
+    </record>
+
+    <!-- Server Action: Process Email Appointment Request -->
+    <record id="server_action_process_email_appointment" model="ir.actions.server">
+        <field name="name">Process Email Appointment Request</field>
+        <field name="model_id" ref="mail.message"/>
+        <field name="state">code</field>
+        <field name="code">
+# Process incoming emails for appointment requests
+# This can be used with mail aliases or email-based automation
+
+for message in records:
+    # Check if this is an appointment request email
+    subject = (message.subject or '').lower()
+    body = (message.body or '').lower()
+    
+    # Simple keyword detection
+    appointment_keywords = ['appointment', 'schedule', 'booking', 'visit', 'support request']
+    is_appointment_request = any(keyword in subject or keyword in body for keyword in appointment_keywords)
+    
+    if is_appointment_request and message.email_from:
+        # Extract basic information from email
+        customer_email = message.email_from
+        customer_name = message.author_id.name if message.author_id else customer_email.split('@')[0]
+        
+        # Create a draft appointment that requires manual review
+        partner = env['res.partner'].search([('email', '=', customer_email)], limit=1)
+        if not partner:
+            partner = env['res.partner'].create({
+                'name': customer_name,
+                'email': customer_email,
+                'is_company': False,
+            })
+        
+        # Get default technician or leave empty for manual assignment
+        default_technician = env['res.users'].search([
+            ('groups_id', 'in', env.ref('support_center.group_support_technician').id),
+            ('active', '=', True)
+        ], limit=1)
+        
+        if partner and default_technician:
+            # Create draft appointment for manual scheduling
+            appointment = env['support.appointment'].create({
+                'customer_id': partner.id,
+                'technician_id': default_technician.id,
+                'scheduled_date': fields.Datetime.now() + timedelta(days=1),  # Default to tomorrow
+                'description': f"Email request: {message.subject}\n\n{message.body}",
+                'created_via': 'automation',
+                'status': 'draft',  # Requires manual confirmation
+                'send_confirmation_email': False,  # Don't send until manually confirmed
+                'send_reminder_email': True,
+            })
+            
+            # Notify support managers about the new request
+            managers = env['res.users'].search([
+                ('groups_id', 'in', env.ref('support_center.group_support_manager').id)
+            ])
+            
+            appointment.message_post(
+                body=f"New appointment request received via email from {customer_email}. Please review and schedule appropriately.",
+                partner_ids=managers.mapped('partner_id.id'),
+                message_type='notification'
+            )
+</field>
+    </record>
+
+    <!-- Base Automation Rule: Auto-send confirmation emails -->
+    <record id="automation_rule_send_confirmation" model="base.automation">
+        <field name="name">Auto-send Confirmation Email</field>
+        <field name="model_id" ref="model_support_appointment"/>
+        <field name="active" eval="True"/>
+        <field name="trigger">on_write</field>
+        <field name="filter_domain">[('status', '=', 'confirmed'), ('send_confirmation_email', '=', True), ('confirmation_sent', '=', False)]</field>
+        <field name="action_server_id" ref="server_action_auto_send_confirmation"/>
+    </record>
+
+    <!-- Server Action: Auto-send confirmation email -->
+    <record id="server_action_auto_send_confirmation" model="ir.actions.server">
+        <field name="name">Auto-send Confirmation Email</field>
+        <field name="model_id" ref="model_support_appointment"/>
+        <field name="state">code</field>
+        <field name="code">
+for appointment in records:
+    if appointment.status == 'confirmed' and appointment.send_confirmation_email and not appointment.confirmation_sent:
+        appointment._send_confirmation_email()
+</field>
+    </record>
+
+    <!-- Base Automation Rule: Notify technician on assignment -->
+    <record id="automation_rule_notify_technician" model="base.automation">
+        <field name="name">Notify Technician on Assignment</field>
+        <field name="model_id" ref="model_support_appointment"/>
+        <field name="active" eval="True"/>
+        <field name="trigger">on_write</field>
+        <field name="filter_domain">[]</field>
+        <field name="action_server_id" ref="server_action_notify_technician"/>
+    </record>
+
+    <!-- Server Action: Notify technician -->
+    <record id="server_action_notify_technician" model="ir.actions.server">
+        <field name="name">Notify Technician of Assignment</field>
+        <field name="model_id" ref="model_support_appointment"/>
+        <field name="state">code</field>
+        <field name="code">
+for appointment in records:
+    # Check if technician was changed
+    if 'technician_id' in env.context.get('old_values', {}):
+        old_technician_id = env.context['old_values'].get('technician_id')
+        if appointment.technician_id.id != old_technician_id:
+            # Send notification to new technician
+            appointment.message_post(
+                body=f"You have been assigned to appointment {appointment.name} scheduled for {appointment.scheduled_date}",
+                partner_ids=[appointment.technician_id.partner_id.id],
+                message_type='notification'
+            )
+</field>
+    </record>
+
+    <!-- Base Automation Rule: Update ticket status on appointment status change -->
+    <record id="automation_rule_sync_ticket_status" model="base.automation">
+        <field name="name">Sync Helpdesk Ticket Status</field>
+        <field name="model_id" ref="model_support_appointment"/>
+        <field name="active" eval="True"/>
+        <field name="trigger">on_write</field>
+        <field name="filter_domain">[]</field>
+        <field name="action_server_id" ref="server_action_sync_ticket_status"/>
+    </record>
+
+    <!-- Server Action: Sync ticket status -->
+    <record id="server_action_sync_ticket_status" model="ir.actions.server">
+        <field name="name">Sync Helpdesk Ticket Status</field>
+        <field name="model_id" ref="model_support_appointment"/>
+        <field name="state">code</field>
+        <field name="code">
+for appointment in records:
+    # Check if status was changed
+    if 'status' in env.context.get('old_values', {}):
+        old_status = env.context['old_values'].get('status')
+        if appointment.status != old_status:
+            appointment._update_ticket_status()
+</field>
+    </record>
+
+    <!-- Example Webhook Automation Rule (for external systems) -->
+    <record id="automation_rule_webhook_appointment" model="base.automation">
+        <field name="name">Webhook Appointment Creation</field>
+        <field name="model_id" ref="model_support_appointment"/>
+        <field name="active" eval="False"/>
+        <field name="trigger">on_create</field>
+        <field name="filter_domain">[('created_via', '=', 'api')]</field>
+        <field name="action_server_id" ref="server_action_webhook_response"/>
+    </record>
+
+    <!-- Server Action: Webhook response -->
+    <record id="server_action_webhook_response" model="ir.actions.server">
+        <field name="name">Send Webhook Response</field>
+        <field name="model_id" ref="model_support_appointment"/>
+        <field name="state">code</field>
+        <field name="code">
+# Example webhook response logic
+# This could send HTTP responses back to external systems
+
+import requests
+import json
+
+for appointment in records:
+    if appointment.created_via == 'api':
+        # Example: Send success response to external system
+        webhook_url = env['ir.config_parameter'].sudo().get_param('support_center.webhook_response_url')
+        
+        if webhook_url:
+            response_data = {
+                'appointment_id': appointment.id,
+                'appointment_reference': appointment.name,
+                'status': 'created',
+                'scheduled_date': appointment.scheduled_date.isoformat(),
+                'technician': appointment.technician_id.name,
+                'customer': appointment.customer_id.name,
+            }
+            
+            try:
+                # Send POST request to external system
+                response = requests.post(
+                    webhook_url, 
+                    json=response_data,
+                    timeout=30,
+                    headers={'Content-Type': 'application/json'}
+                )
+                
+                if response.status_code == 200:
+                    appointment.message_post(body=f"External system notified successfully")
+                else:
+                    appointment.message_post(body=f"External system notification failed: {response.status_code}")
+                    
+            except Exception as e:
+                appointment.message_post(body=f"Webhook notification error: {str(e)}")
+</field>
+    </record>
+</odoo>

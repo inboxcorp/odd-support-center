@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Main Menu -->
+    <menuitem 
+        id="menu_support_center_main"
+        name="Support Center"
+        sequence="50"
+        groups="group_support_technician"
+        web_icon="support_center,static/description/icon.png"/>
+
+    <!-- Appointments Submenu -->
+    <menuitem 
+        id="menu_appointments"
+        name="Appointments"
+        parent="menu_support_center_main"
+        sequence="10"
+        groups="group_support_technician"/>
+
+    <!-- Quick Create Menu -->
+    <menuitem 
+        id="menu_appointment_quick_create"
+        name="Create Appointment"
+        parent="menu_appointments"
+        action="action_appointment_quick_create"
+        sequence="5"
+        groups="group_support_technician"/>
+
+    <!-- Calendar View Menu -->
+    <menuitem 
+        id="menu_appointment_calendar"
+        name="Calendar"
+        parent="menu_appointments"
+        action="action_appointment_calendar"
+        sequence="10"
+        groups="group_support_technician"/>
+
+    <!-- List View Menu -->
+    <menuitem 
+        id="menu_appointment_list"
+        name="All Appointments"
+        parent="menu_appointments"
+        action="action_appointment_list"
+        sequence="20"
+        groups="group_support_technician"/>
+
+    <!-- Settings Menu (Managers Only) -->
+    <menuitem 
+        id="menu_support_settings"
+        name="Settings"
+        parent="menu_support_center_main"
+        sequence="90"
+        groups="group_support_manager"/>
+
+    <menuitem 
+        id="menu_appointment_settings"
+        name="Appointment Settings"
+        parent="menu_support_settings"
+        action="action_appointment_settings"
+        sequence="10"
+        groups="group_support_manager"/>
+
+</odoo>

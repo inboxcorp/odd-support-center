@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Security Groups -->
+    <record id="group_support_manager" model="res.groups">
+        <field name="name">Support Manager</field>
+        <field name="category_id" ref="base.module_category_services"/>
+        <field name="comment">Support managers can view and manage all appointments across all technicians</field>
+    </record>
+
+    <record id="group_support_technician" model="res.groups">
+        <field name="name">Support Technician</field>
+        <field name="category_id" ref="base.module_category_services"/>
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+        <field name="comment">Support technicians can view and manage only their own appointments</field>
+    </record>
+
+    <!-- Inherit support manager from technician to give access to both -->
+    <record id="group_support_manager" model="res.groups">
+        <field name="implied_ids" eval="[(4, ref('group_support_technician'))]"/>
+    </record>
+
+    <!-- Record Rules for Appointments -->
+    <record id="appointment_manager_rule" model="ir.rule">
+        <field name="name">Support Managers see all appointments</field>
+        <field name="model_id" ref="model_support_appointment"/>
+        <field name="groups" eval="[(4, ref('group_support_manager'))]"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <record id="appointment_technician_rule" model="ir.rule">
+        <field name="name">Technicians see only their appointments</field>
+        <field name="model_id" ref="model_support_appointment"/>
+        <field name="groups" eval="[(4, ref('group_support_technician'))]"/>
+        <field name="domain_force">[('technician_id', '=', user.id)]</field>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+
+    <!-- Record Rules for Settings -->
+    <record id="settings_manager_rule" model="ir.rule">
+        <field name="name">Support Managers can manage all settings</field>
+        <field name="model_id" ref="model_support_appointment_settings"/>
+        <field name="groups" eval="[(4, ref('group_support_manager'))]"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <record id="settings_technician_rule" model="ir.rule">
+        <field name="name">Technicians can only view their own settings</field>
+        <field name="model_id" ref="model_support_appointment_settings"/>
+        <field name="groups" eval="[(4, ref('group_support_technician'))]"/>
+        <field name="domain_force">['|', ('technician_id', '=', user.id), ('technician_id', '=', False)]</field>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="0"/>
+        <field name="perm_create" eval="0"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+</odoo>

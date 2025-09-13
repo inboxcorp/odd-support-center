@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Quick Create Appointment Wizard -->
+    <record id="view_appointment_wizard_form" model="ir.ui.view">
+        <field name="name">support.appointment.wizard.form</field>
+        <field name="model">support.appointment.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Create New Appointment">
+                <div class="alert alert-warning" role="alert" attrs="{'invisible': [('conflicts_found', '=', False)]}">
+                    <strong>⚠️ Scheduling Conflict Detected</strong>
+                    <p><field name="conflict_message" readonly="1"/></p>
+                    <button name="action_suggest_times" string="Suggest Alternative Times" 
+                            type="object" class="btn btn-link"/>
+                </div>
+                
+                <group>
+                    <group name="appointment_info" string="Appointment Details">
+                        <field name="customer_id" options="{'no_create_edit': True}"/>
+                        <field name="technician_id" options="{'no_create_edit': True}"/>
+                        <field name="scheduled_date"/>
+                        <field name="duration" widget="float_time"/>
+                        <field name="priority" widget="priority"/>
+                    </group>
+                    
+                    <group name="service_info" string="Service Information">
+                        <field name="location" placeholder="Service address or location"/>
+                        <field name="existing_ticket_id" 
+                               help="Link to existing ticket or leave empty to auto-create"
+                               options="{'no_create_edit': True}"/>
+                    </group>
+                </group>
+                
+                <group string="Service Description">
+                    <field name="description" nolabel="1" 
+                           placeholder="Describe the service or issue to be addressed..."/>
+                </group>
+                
+                <group string="Email Notifications" name="email_options">
+                    <group>
+                        <field name="send_confirmation_email"/>
+                        <field name="send_reminder_email"/>
+                    </group>
+                </group>
+                
+                <!-- Hidden fields for conflict detection -->
+                <field name="conflicts_found" invisible="1"/>
+                
+                <footer>
+                    <button name="action_create_appointment" string="Create Appointment" 
+                            type="object" class="btn-primary"
+                            attrs="{'invisible': [('conflicts_found', '=', True)]}"/>
+                    <button name="action_create_and_continue" string="Create &amp; Add Another" 
+                            type="object" class="btn-secondary"
+                            attrs="{'invisible': [('conflicts_found', '=', True)]}"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action for Quick Create Wizard -->
+    <record id="action_appointment_quick_create" model="ir.actions.act_window">
+        <field name="name">Create Appointment</field>
+        <field name="res_model">support.appointment.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="view_id" ref="view_appointment_wizard_form"/>
+    </record>
+
+    <!-- Time Suggestions Model -->
+    <record id="view_appointment_suggestions_form" model="ir.ui.view">
+        <field name="name">support.appointment.suggestions.form</field>
+        <field name="model">support.appointment.suggestions</field>
+        <field name="arch" type="xml">
+            <form string="Suggested Appointment Times">
+                <div class="alert alert-info" role="alert">
+                    <p>Here are available time slots for <strong><field name="technician_name" readonly="1"/></strong>:</p>
+                </div>
+                
+                <group>
+                    <field name="selected_datetime" widget="radio"/>
+                </group>
+                
+                <footer>
+                    <button name="action_select_time" string="Select This Time" 
+                            type="object" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- Reschedule Wizard -->
+    <record id="view_appointment_reschedule_form" model="ir.ui.view">
+        <field name="name">support.appointment.reschedule.form</field>
+        <field name="model">support.appointment.reschedule</field>
+        <field name="arch" type="xml">
+            <form string="Reschedule Appointment">
+                <div class="alert alert-info" role="alert">
+                    <strong>📅 Rescheduling Appointment</strong>
+                    <p>Current appointment: <field name="current_customer" readonly="1"/> 
+                       on <field name="current_date" readonly="1" widget="datetime"/></p>
+                </div>
+                
+                <div class="alert alert-warning" role="alert" attrs="{'invisible': [('conflicts_found', '=', False)]}">
+                    <strong>⚠️ Scheduling Conflicts</strong>
+                    <p><field name="conflict_details" readonly="1"/></p>
+                    <button name="action_suggest_alternatives" string="Suggest Alternative Times" 
+                            type="object" class="btn btn-link"/>
+                </div>
+                
+                <group>
+                    <group name="current_details" string="Current Appointment">
+                        <field name="appointment_id" invisible="1"/>
+                        <field name="current_customer"/>
+                        <field name="current_date" widget="datetime"/>
+                        <field name="current_technician"/>
+                        <field name="current_status" widget="badge"/>
+                        <field name="duration" widget="float_time"/>
+                    </group>
+                    
+                    <group name="new_details" string="Reschedule To">
+                        <field name="new_date" widget="datetime"/>
+                        <field name="new_technician_id" 
+                               placeholder="Leave empty to keep current technician"
+                               options="{'no_create_edit': True}"/>
+                    </group>
+                </group>
+                
+                <group string="Reschedule Details">
+                    <field name="reason" placeholder="Explain why this appointment is being rescheduled..."/>
+                </group>
+                
+                <group string="Notifications" name="notifications">
+                    <group>
+                        <field name="notify_customer"/>
+                        <field name="notify_technician"/>
+                    </group>
+                </group>
+                
+                <!-- Hidden fields -->
+                <field name="conflicts_found" invisible="1"/>
+                
+                <footer>
+                    <button name="action_reschedule" string="Reschedule Appointment" 
+                            type="object" class="btn-primary"
+                            attrs="{'invisible': [('conflicts_found', '=', True)]}"/>
+                    <button name="action_suggest_alternatives" string="Find Alternative Times" 
+                            type="object" class="btn-secondary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- Cancel Appointment Wizard -->
+    <record id="view_appointment_cancel_form" model="ir.ui.view">
+        <field name="name">support.appointment.cancel.form</field>
+        <field name="model">support.appointment.cancel</field>
+        <field name="arch" type="xml">
+            <form string="Cancel Appointment">
+                <div class="alert alert-warning" role="alert">
+                    <strong>⚠️ Cancel Appointment</strong>
+                    <p>You are about to cancel the appointment for <strong><field name="customer_name" readonly="1"/></strong> 
+                       scheduled on <field name="scheduled_date" readonly="1" widget="datetime"/>.</p>
+                    <p>This action cannot be undone. Please provide a reason for the cancellation.</p>
+                </div>
+                
+                <group>
+                    <group name="appointment_details" string="Appointment Details">
+                        <field name="appointment_id" invisible="1"/>
+                        <field name="customer_name"/>
+                        <field name="scheduled_date" widget="datetime"/>
+                        <field name="technician_name"/>
+                        <field name="current_status" widget="badge"/>
+                    </group>
+                    
+                    <group name="cancellation_details" string="Cancellation Details">
+                        <field name="reason" required="1"/>
+                        <field name="reason_details" 
+                               placeholder="Provide additional context about the cancellation..."
+                               attrs="{'required': [('reason', '=', 'other')]}"/>
+                    </group>
+                </group>
+                
+                <group string="Notifications" name="notifications">
+                    <group>
+                        <field name="notify_customer"/>
+                        <field name="notify_technician"/>
+                    </group>
+                </group>
+                
+                <group string="Billing" name="billing" attrs="{'invisible': [('reason', 'not in', ['customer_request', 'technician_unavailable', 'emergency'])]}">
+                    <group>
+                        <field name="refund_required"/>
+                        <field name="refund_notes" 
+                               attrs="{'invisible': [('refund_required', '=', False)]}"
+                               placeholder="Notes about refund processing..."/>
+                    </group>
+                </group>
+                
+                <footer>
+                    <button name="action_cancel_appointment" string="Cancel Appointment" 
+                            type="object" class="btn-primary"/>
+                    <button name="action_cancel_and_reschedule" string="Cancel &amp; Reschedule" 
+                            type="object" class="btn-info"
+                            attrs="{'invisible': [('reason', 'in', ['duplicate', 'other'])]}"/>
+                    <button string="Back" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+</odoo>

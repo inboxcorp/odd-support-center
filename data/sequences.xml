@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Appointment Reference Sequence -->
+    <record id="sequence_support_appointment" model="ir.sequence">
+        <field name="name">Support Appointment Sequence</field>
+        <field name="code">support.appointment</field>
+        <field name="prefix">APPT-</field>
+        <field name="padding">4</field>
+        <field name="number_next">1</field>
+        <field name="company_id" eval="False"/>
+    </record>
+</odoo>
